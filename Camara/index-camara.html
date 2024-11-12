@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Video en Canvas con A-Frame (Cámara del Ordenador)</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="js/Camara-component.js"></script> <!-- Carga el componente personalizado -->
+</head>
+<body>
+  <h1>Video en Canvas A-Frame - Cámara del Ordenador</h1>
+  <div id="video-container">
+    <!-- Video que será alimentado por la cámara del ordenador -->
+    <video id="local-video" autoplay playsinline muted></video>
+  </div>
+  
+  <a-scene>
+    <a-camera position="0 1.6 5"></a-camera>
+    <a-box position="0 1 -3" width="4" height="2.25" depth="0.1" video-canvas-texture></a-box>
+    <a-light type="directional" position="-1 2 3" intensity="1.5"></a-light>
+    <a-sky color="#ECECEC"></a-sky>
+  </a-scene>
+</body>
+</html>
