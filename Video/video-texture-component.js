@@ -7,32 +7,53 @@ AFRAME.registerComponent('video-canvas-texture', {
     // Obtener el elemento de video
     this.videoElement = document.getElementById('local-video');
 
+    // Verificar si el video se obtuvo correctamente
+    if (!this.videoElement) {
+      console.error('No se encontró el elemento de video con el ID especificado.');
+      return;
+    }
+
     // Crear un canvas para dibujar el contenido del video
     this.canvas = document.createElement('canvas');
     this.context = this.canvas.getContext('2d');
 
-    // Crear una textura a partir del canvas
+    // Crear una textura a partir del canvas y asignarla al material de la caja
     this.texture = new THREE.Texture(this.canvas);
-    this.el.getObject3D('mesh').material.map = this.texture;
+    const mesh = this.el.getObject3D('mesh');
+    if (mesh) {
+      mesh.material.map = this.texture;
+    } else {
+      console.error('No se encontró el mesh del elemento al cual aplicar la textura.');
+      return;
+    }
 
-    // Configurar el canvas cuando el video se haya cargado
+    // Obtener acceso a la cámara del ordenador (si es necesario) o cargar el video
     this.videoElement.addEventListener('loadeddata', () => {
-      // Configurar el tamaño del canvas basado en el tamaño del video
-      this.canvas.width = this.videoElement.videoWidth;
-      this.canvas.height = this.videoElement.videoHeight;
+      if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
+        // Configurar el tamaño del canvas basado en el tamaño del video
+        this.canvas.width = this.videoElement.videoWidth;
+        this.canvas.height = this.videoElement.videoHeight;
 
-      // Comenzar a actualizar el canvas continuamente para mostrar el video
-      this.updateCanvas();  
+        // Comenzar a actualizar el canvas continuamente para mostrar el video
+        this.updateCanvas();
+      } else {
+        console.error('El video no está listo para ser procesado.');
+      }
+    });
+
+    // Agregar un listener para manejar errores de carga de video
+    this.videoElement.addEventListener('error', (e) => {
+      console.error('Error al cargar el video:', e);
     });
   },
 
   updateCanvas: function () {
-    // Dibujar el video en el canvas y acceder pixel a pixel
-    if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
+    // Verificar si el video tiene suficientes datos para ser dibujado
+    if (this.videoElement.readyState >= this.videoElement.HAVE_ENOUGH_DATA) {
       // Dibujar el frame del video en el canvas
       this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
 
-      // Obtener los datos de la imagen
+      // Obtener los datos de la imagen y procesar los píxeles sin alterar el color
       const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
       const data = imageData.data;
 
@@ -43,8 +64,7 @@ AFRAME.registerComponent('video-canvas-texture', {
         const b = data[i + 2]; // Azul
         const a = data[i + 3]; // Alfa
 
-        // Aquí podrías realizar cualquier operación sobre r, g, b, a si fuera necesario.
-        // Pero en este caso, mantenemos los valores sin alterarlos.
+        // Mantener los valores sin alterarlos
         data[i] = r;     // Rojo (sin cambios)
         data[i + 1] = g; // Verde (sin cambios)
         data[i + 2] = b; // Azul (sin cambios)
