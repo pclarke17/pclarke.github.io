@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Video de la Cámara en Canvas con A-Frame</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="Camara-component.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.1/dist/peerjs.min.js"></script> <!-- Script de PeerJS -->
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden; /* Evitar scroll para pantalla completa */
+    }
+    #role-selection {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- Botones para seleccionar el rol -->
+  <div id="role-selection">
+    <button id="become-host">Ser Transmisor</button>
+    <button id="become-viewer">Ser Espectador</button>
+  </div>
+
+  <!-- Escena de A-Frame -->
+  <a-scene>
+    <a-camera position="0 1.6 5"></a-camera>
+    <a-box position="0 1 -3" width="4" height="2.25" depth="0.1" camera-canvas-texture></a-box>
+    <a-light type="directional" position="-1 2 3" intensity="1.5"></a-light>
+    <a-sky color="#ECECEC"></a-sky>
+  </a-scene>
+
+  <script>
+    // Inicializar PeerJS
+    const peer = new Peer(null, {
+      host: 'localhost',
+      port: 9000,
+      path: '/'
+    });
+
+    document.getElementById('become-host').addEventListener('click', function () {
+      // Ocultar botones de selección de rol
+      document.getElementById('role-selection').style.display = 'none';
+      // Comenzar a transmitir como el "host"
+      const videoComponent = document.querySelector('[camera-canvas-texture]').components['camera-canvas-texture'];
+      if (videoComponent) {
+        videoComponent.startHost(peer);
+      }
+    });
+
+    document.getElementById('become-viewer').addEventListener('click', function () {
+      // Ocultar botones de selección de rol
+      document.getElementById('role-selection').style.display = 'none';
+      // Unirse como espectador
+      const streamId = prompt('Introduce el ID del transmisor:');
+      if (streamId) {
+        const call = peer.call(streamId, null); // Llamar al host para recibir el stream
+        call.on('stream', function (remoteStream) {
+          // Recibir y mostrar el stream remoto en el componente A-Frame
+          const videoComponent = document.querySelector('[camera-canvas-texture]').components['camera-canvas-texture'];
+          if (videoComponent) {
+            videoComponent.setRemoteStream(remoteStream);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
