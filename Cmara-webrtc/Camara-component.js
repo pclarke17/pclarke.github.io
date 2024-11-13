@@ -46,6 +46,13 @@ AFRAME.registerComponent('camera-canvas-texture', {
   
           this.peer.on('open', (id) => {
             console.log(`Tu ID es: ${id}. Comparte este ID con los espectadores para que se conecten.`);
+  
+            // Mostrar el ID del transmisor en la página
+            const peerIdElement = document.getElementById('peer-id');
+            peerIdElement.textContent = id;
+  
+            const transmitterIdDiv = document.getElementById('transmitter-id');
+            transmitterIdDiv.style.display = 'block';
           });
   
           this.peer.on('call', (call) => {
