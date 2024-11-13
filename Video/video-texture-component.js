@@ -40,8 +40,17 @@ AFRAME.registerComponent('video-canvas-texture', {
         this.canvas.width = this.videoElement.videoWidth;
         this.canvas.height = this.videoElement.videoHeight;
 
-        // Comenzar a actualizar el canvas continuamente para mostrar el video
-        this.updateCanvas();
+        console.log("Tamaño del canvas:", this.canvas.width, this.canvas.height);
+        console.log("Tamaño del video:", this.videoElement.videoWidth, this.videoElement.videoHeight);
+
+        // Intentar reproducir el video automáticamente
+        this.videoElement.play().then(() => {
+          console.log("Video reproduciéndose.");
+          // Comenzar a actualizar el canvas continuamente para mostrar el video
+          this.updateCanvas();
+        }).catch((error) => {
+          console.error("Error al reproducir el video automáticamente:", error);
+        });
       } else {
         console.error('El video no está listo para ser procesado.');
       }
