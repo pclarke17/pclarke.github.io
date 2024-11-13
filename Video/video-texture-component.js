@@ -7,7 +7,7 @@ AFRAME.registerComponent('video-canvas-texture', {
     // Crear dinámicamente el elemento de video
     this.videoElement = document.createElement('video');
     this.videoElement.src = "video.mp4";  // Ruta del archivo de video
-    this.videoElement.autoplay = false;  // No reproducir automáticamente al cargar la página
+    this.videoElement.autoplay = true;  // Intentar reproducir automáticamente
     this.videoElement.playsInline = true;  // Reproducción en línea
     this.videoElement.muted = true;  // Mutear inicialmente para permitir la reproducción automática
     this.videoElement.loop = true;  // Repetir el video continuamente
@@ -30,20 +30,33 @@ AFRAME.registerComponent('video-canvas-texture', {
       return;
     }
 
-    // Agregar listener para el botón de inicio
-    document.getElementById('play-button').addEventListener('click', () => {
-      this.videoElement.muted = false;  // Desmutear el video para escuchar el audio
-      this.videoElement.play().then(() => {
-        console.log("Video reproduciéndose con audio.");
+    // Esperar a que el video esté listo para reproducir
+    this.videoElement.addEventListener('loadeddata', () => {
+      console.log("Datos del video cargados.");
+
+      if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
+        console.log("El video está listo, configurando el canvas.");
+        
         // Configurar el tamaño del canvas basado en el tamaño del video
         this.canvas.width = this.videoElement.videoWidth;
         this.canvas.height = this.videoElement.videoHeight;
 
-        // Comenzar a actualizar el canvas continuamente para mostrar el video
-        this.updateCanvas();
-      }).catch((error) => {
-        console.error("Error al reproducir el video:", error);
-      });
+        // Intentar reproducir el video automáticamente
+        this.videoElement.play().then(() => {
+          console.log("Video reproduciéndose automáticamente.");
+          // Comenzar a actualizar el canvas continuamente para mostrar el video
+          this.updateCanvas();
+        }).catch((error) => {
+          console.error("Error al reproducir el video automáticamente:", error);
+        });
+      } else {
+        console.error('El video no está listo para ser procesado.');
+      }
+    });
+
+    // Agregar un listener para manejar errores en la carga del video
+    this.videoElement.addEventListener('error', (e) => {
+      console.error('Error al cargar el video:', e);
     });
   },
 
