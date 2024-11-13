@@ -9,3 +9,5 @@ https://pclarke17.github.io/pclarke.github.io/Camara
 Para utilizar github pages y ver el funcionamiento de los scripts de Video:
 https://pclarke17.github.io/pclarke.github.io/Video
 
+
+
