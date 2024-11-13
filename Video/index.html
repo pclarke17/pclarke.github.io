@@ -6,33 +6,8 @@
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="video-canvas-texture.js" defer></script> <!-- Carga el componente personalizado al final -->
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden; /* Evitar scroll para pantalla completa */
-    }
-
-    #play-button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      z-index: 1000; /* Asegura que el botón esté siempre en el frente */
-      font-size: 16px;
-      border-radius: 5px;
-    }
-
-    
-  </style>
-</head>
 <body>
-  <!-- Botón para iniciar la reproducción del video -->
-  <button id="play-button">Iniciar Video</button>
-  
+ 
   <!-- Video fuente para usar en el canvas -->
   <video id="local-video" src="video.mp4" playsinline loop></video>
 
