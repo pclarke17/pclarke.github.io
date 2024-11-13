@@ -4,16 +4,27 @@ AFRAME.registerComponent('camera-canvas-texture', {
   },
 
   init: function () {
+    // Mostrar todos los dispositivos disponibles en la consola
+    navigator.mediaDevices.enumerateDevices()
+      .then((devices) => {
+        devices.forEach((device) => {
+          console.log("Dispositivo encontrado:", device.label, device.kind, device.deviceId);
+        });
+      })
+      .catch((err) => {
+        console.error("Error al enumerar dispositivos:", err);
+      });
+
     // Crear dinámicamente el elemento de video
     this.videoElement = document.createElement('video');
     this.videoElement.autoplay = true;  // Intentar reproducir automáticamente
     this.videoElement.playsInline = true;  // Reproducción en línea para móviles
-    this.videoElement.muted = true;  // Mutear para permitir la reproducción automática
+    this.videoElement.muted = false;  // Mutear para permitir la reproducción automática
 
     console.log("Elemento de video creado dinámicamente para la cámara:", this.videoElement);
 
-    // Acceder a la cámara del ordenador
-    navigator.mediaDevices.getUserMedia({ video: true })
+    // Intentar acceder a la cámara del ordenador
+    navigator.mediaDevices.getUserMedia({ video: true , audio:true})
       .then((stream) => {
         // Asignar el stream al elemento de video
         this.videoElement.srcObject = stream;
@@ -54,7 +65,25 @@ AFRAME.registerComponent('camera-canvas-texture', {
 
       })
       .catch((error) => {
+        // Manejo de errores al acceder a la cámara
         console.error('Error al acceder a la cámara:', error);
+        
+        switch (error.name) {
+          case 'NotFoundError':
+            console.error('No se encontró ningún dispositivo de cámara. Por favor, asegúrate de que una cámara esté conectada y disponible.');
+            break;
+          case 'NotAllowedError':
+            console.error('El acceso a la cámara ha sido denegado. Por favor, otorga permisos de cámara al sitio en la configuración de tu navegador.');
+            break;
+          case 'NotReadableError':
+            console.error('La cámara está siendo usada por otra aplicación. Cierra cualquier aplicación que esté utilizando la cámara y vuelve a intentarlo.');
+            break;
+          case 'OverconstrainedError':
+            console.error('No se encontró una cámara que cumpla con las restricciones solicitadas. Intenta eliminar restricciones específicas.');
+            break;
+          default:
+            console.error('Ocurrió un error desconocido al intentar acceder a la cámara:', error);
+        }
       });
   },
 
