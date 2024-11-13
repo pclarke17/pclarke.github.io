@@ -4,19 +4,19 @@ AFRAME.registerComponent('video-canvas-texture', {
   },
 
   init: function () {
-    // Obtener el elemento de video
-    this.videoElement = document.getElementById('local-video');
-    console.log("Elemento de video obtenido:", this.videoElement);
+    // Crear dinámicamente el elemento de video
+    this.videoElement = document.createElement('video');
+    this.videoElement.src = "video.mp4";  // Ruta del archivo de video
+    this.videoElement.autoplay = false;  // No reproducir automáticamente al cargar la página
+    this.videoElement.playsInline = true;  // Reproducción en línea
+    this.videoElement.muted = true;  // Mutear inicialmente para permitir la reproducción automática
+    this.videoElement.loop = true;  // Repetir el video continuamente
 
-    // Verificar si el video se obtuvo correctamente
-    if (!this.videoElement) {
-      console.error('No se encontró el elemento de video con el ID especificado.');
-      return;
-    }
+    console.log("Elemento de video creado dinámicamente:", this.videoElement);
 
-    // Crear un canvas para dibujar el contenido del video
+    // Crear un canvas para dibujar el contenido del video con la opción `willReadFrequently`
     this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext('2d');
+    this.context = this.canvas.getContext('2d', { willReadFrequently: true });
     console.log("Canvas creado con contexto 2D:", this.canvas, this.context);
 
     // Crear una textura a partir del canvas y asignarla al material de la caja
@@ -30,35 +30,20 @@ AFRAME.registerComponent('video-canvas-texture', {
       return;
     }
 
-    // Obtener acceso a la cámara del ordenador (si es necesario) o cargar el video
-    this.videoElement.addEventListener('loadeddata', () => {
-      console.log("Datos del video cargados.");
-
-      if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
-        console.log("El video está listo, configurando el canvas.");
+    // Agregar listener para el botón de inicio
+    document.getElementById('play-button').addEventListener('click', () => {
+      this.videoElement.muted = false;  // Desmutear el video para escuchar el audio
+      this.videoElement.play().then(() => {
+        console.log("Video reproduciéndose con audio.");
         // Configurar el tamaño del canvas basado en el tamaño del video
         this.canvas.width = this.videoElement.videoWidth;
         this.canvas.height = this.videoElement.videoHeight;
 
-        console.log("Tamaño del canvas:", this.canvas.width, this.canvas.height);
-        console.log("Tamaño del video:", this.videoElement.videoWidth, this.videoElement.videoHeight);
-
-        // Intentar reproducir el video automáticamente
-        this.videoElement.play().then(() => {
-          console.log("Video reproduciéndose.");
-          // Comenzar a actualizar el canvas continuamente para mostrar el video
-          this.updateCanvas();
-        }).catch((error) => {
-          console.error("Error al reproducir el video automáticamente:", error);
-        });
-      } else {
-        console.error('El video no está listo para ser procesado.');
-      }
-    });
-
-    // Agregar un listener para manejar errores de carga de video
-    this.videoElement.addEventListener('error', (e) => {
-      console.error('Error al cargar el video:', e);
+        // Comenzar a actualizar el canvas continuamente para mostrar el video
+        this.updateCanvas();
+      }).catch((error) => {
+        console.error("Error al reproducir el video:", error);
+      });
     });
   },
 
