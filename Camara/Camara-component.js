@@ -8,7 +8,7 @@ AFRAME.registerComponent('camera-canvas-texture', {
     this.videoElement = document.createElement('video');
     this.videoElement.autoplay = true;
     this.videoElement.playsInline = true;  // Reproducción en línea (necesario para dispositivos móviles)
-    this.videoElement.muted = false;  // Silenciar el video para evitar problemas de reproducción automática
+    this.videoElement.muted = true;  // Silenciar el video para evitar problemas de reproducción automática
     this.videoElement.loop = true;  // Repetir el video
 
     console.log("Elemento de video creado dinámicamente para la cámara:", this.videoElement);
@@ -30,7 +30,7 @@ AFRAME.registerComponent('camera-canvas-texture', {
     }
 
     // Obtener el stream de la cámara del dispositivo
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       .then((stream) => {
         this.videoElement.srcObject = stream;
 
