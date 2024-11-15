@@ -17,7 +17,7 @@ AFRAME.registerComponent('video-canvas-texture', {
 
     // Crear un canvas para dibujar el contenido del video
     this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext('2d', { willReadFrequently: true });
+    this.context = this.canvas.getContext('2d', { willReadFrequently: true }); //willReadFrequently: optimización de operación repetitiva de lectura del canvas
     console.log("Canvas creado con contexto 2D:", this.canvas, this.context);
 
     // Crear una textura a partir del canvas y asignarla al material del objeto 3D
