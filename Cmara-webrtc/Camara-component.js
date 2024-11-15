@@ -35,44 +35,28 @@ AFRAME.registerComponent('camera-canvas-texture', {
     },
   
     startHost: function (peer) {
-      // Intentar acceder a la cámara del ordenador
       navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then((stream) => {
-          // Asignar el stream al elemento de video
           this.videoElement.srcObject = stream;
   
-          // Crear instancia de Peer para transmitir el stream
+          console.log("Obtenido el stream de la cámara, iniciando el Peer...");
+  
           this.peer = peer;
   
-          this.peer.on('open', (id) => {
-            console.log(`Tu ID es: ${id}. Comparte este ID con los espectadores para que se conecten.`);
-  
-            // Mostrar el ID del transmisor en la página
-            const peerIdElement = document.getElementById('peer-id');
-            peerIdElement.textContent = id;
-  
-            const transmitterIdDiv = document.getElementById('transmitter-id');
-            transmitterIdDiv.style.display = 'block';
-          });
-  
           this.peer.on('call', (call) => {
-            // Responder la llamada entrante enviando el stream de la cámara
-            call.answer(stream);
+            console.log('Recibida una llamada entrante, respondiendo con el stream...');
+            call.answer(stream); // Responder la llamada entrante enviando el stream de la cámara
           });
   
-          // Esperar a que el video esté listo para reproducir
           this.videoElement.addEventListener('loadeddata', () => {
             if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
               console.log("Video de la cámara listo. Configurando el canvas.");
-  
-              // Configurar el tamaño del canvas basado en el tamaño del video
               this.canvas.width = this.videoElement.videoWidth;
               this.canvas.height = this.videoElement.videoHeight;
   
-              // Reproducir el video y comenzar la actualización del canvas
               this.videoElement.play().then(() => {
                 console.log("El video comenzó a reproducirse exitosamente.");
-                this.startCanvasUpdate();
+                this.startCanvasUpdate(); // Iniciar la actualización del canvas
               }).catch((error) => {
                 console.error("Error al intentar reproducir el video:", error);
               });
@@ -85,22 +69,32 @@ AFRAME.registerComponent('camera-canvas-texture', {
     },
   
     setRemoteStream: function (stream) {
-      // Asignar el stream remoto al video y comenzar la reproducción
       this.videoElement.srcObject = stream;
       this.videoElement.play().catch((error) => {
         console.error("Error al reproducir el stream remoto:", error);
       });
+      this.startCanvasUpdate();
     },
   
-    tick: function (time, timeDelta) {
-      // Actualizar solo si el video tiene suficientes datos y ha pasado suficiente tiempo desde la última actualización
-      if (this.videoElement && this.videoElement.readyState >= this.videoElement.HAVE_ENOUGH_DATA) {
-        if (time - this.lastUpdateTime > 1000 / this.data.frameRate) {
-          this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-          this.texture.needsUpdate = true; // Marcar la textura para actualizarla
-          this.lastUpdateTime = time; // Actualizar el tiempo de la última actualización
+    startCanvasUpdate: function () {
+      const updateCanvas = () => {
+        if (this.videoElement.readyState >= this.videoElement.HAVE_ENOUGH_DATA) {
+          if (this.canvas.width !== this.videoElement.videoWidth || this.canvas.height !== this.videoElement.videoHeight) {
+            this.canvas.width = this.videoElement.videoWidth;
+            this.canvas.height = this.videoElement.videoHeight;
+            console.log("Ajuste de tamaño del canvas:", this.canvas.width, this.canvas.height);
+          }
+  
+          try {
+            this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+            this.texture.needsUpdate = true; // Marcar la textura para actualizarla
+          } catch (error) {
+            console.error("Error al dibujar el video en el canvas:", error);
+          }
         }
-      }
+        requestAnimationFrame(updateCanvas); // Continuar actualizando el canvas
+      };
+      requestAnimationFrame(updateCanvas);
     }
   });
   
