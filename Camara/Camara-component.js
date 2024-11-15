@@ -65,11 +65,9 @@ AFRAME.registerComponent('camera-canvas-texture', {
       const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
       const data = imageData.data;
 
-      // Procesar cada píxel: En este caso, simplemente dejamos los píxeles sin modificar
-      // Si deseas modificar los colores, puedes agregar la lógica aquí
+     
       for (let i = 0; i < data.length; i += 4) {
-        // R, G, B, A ya tienen los valores originales del video
-        // En este ejemplo, no se hace ningún cambio, manteniendo el color original
+        
       }
 
       // Devolver la imagen procesada al canvas sin modificaciones
