@@ -64,7 +64,7 @@ AFRAME.registerComponent('video-canvas-texture', {
       const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
       const data = imageData.data;
 
-      // Procesar cada pixel: Aquí puedes modificar los valores RGBA
+      // Procesar cada pixel:  modificar los valores RGBA
       for (let i = 0; i < data.length; i += 4) {
         // Accede a cada canal (R, G, B, A)
         const r = data[i];     // Rojo
