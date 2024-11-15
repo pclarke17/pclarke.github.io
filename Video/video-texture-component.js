@@ -9,7 +9,7 @@ AFRAME.registerComponent('video-canvas-texture', {
     this.videoElement.src = "video.mp4";  // Ruta del archivo de video
     this.videoElement.autoplay = true;  // Intentar reproducir automáticamente
     this.videoElement.playsInline = true;  // Reproducción en línea
-    this.videoElement.muted = false;  // Mutear inicialmente para permitir la reproducción automática
+    this.videoElement.muted = true;  // Mutear inicialmente para permitir la reproducción automática
     this.videoElement.loop = true;  // Repetir el video continuamente
 
     console.log("Elemento de video creado dinámicamente:", this.videoElement);
