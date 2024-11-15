@@ -10,7 +10,7 @@ AFRAME.registerComponent('video-canvas-texture', {
     this.videoElement.crossOrigin = 'anonymous';  // Permitir CORS para videos alojados en otras fuentes
     this.videoElement.autoplay = true;  // Intentar reproducir automáticamente
     this.videoElement.playsInline = true;  // Reproducción en línea
-    this.videoElement.muted = false;  // Mutear para permitir la reproducción automática en la mayoría de los navegadores
+    this.videoElement.muted = false;  
     this.videoElement.loop = true;  // Repetir el video continuamente
 
     console.log("Elemento de video creado dinámicamente:", this.videoElement);
