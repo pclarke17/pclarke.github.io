@@ -34,15 +34,18 @@ AFRAME.registerComponent('video-canvas-texture', {
     this.startVideo = () => {
       this.videoElement.play().then(() => {
         console.log("Video reproduciéndose automáticamente.");
-        this.canvas.width = this.videoElement.videoWidth;
-        this.canvas.height = this.videoElement.videoHeight;
-
-        // Comenzar a actualizar el canvas en cada frame
-        this.updateCanvas();
       }).catch((error) => {
         console.error("Error al intentar reproducir el video automáticamente:", error);
       });
     };
+
+    // Cuando el video haya cargado sus metadatos (incluyendo dimensiones), ajustar el tamaño del canvas
+    this.videoElement.addEventListener('loadedmetadata', () => {
+      console.log("Metadatos del video cargados. Configurando el tamaño del canvas.");
+      this.canvas.width = this.videoElement.videoWidth;
+      this.canvas.height = this.videoElement.videoHeight;
+      this.startCanvasUpdate();
+    });
 
     // Agregar un listener para manejar errores en la carga del video
     this.videoElement.addEventListener('error', (e) => {
@@ -50,15 +53,25 @@ AFRAME.registerComponent('video-canvas-texture', {
     });
   },
 
+  // Método que comienza la actualización del canvas cuando todo está listo
+  startCanvasUpdate: function () {
+    console.log("Iniciando actualización del canvas...");
+    this.updateCanvas();  // Iniciar la actualización del canvas
+  },
+
+  // Método que actualiza el canvas constantemente
   updateCanvas: function () {
-    // Usar `requestAnimationFrame` para actualizar el canvas constantemente
     if (this.videoElement.readyState >= this.videoElement.HAVE_ENOUGH_DATA) {
-      // Dibujar el frame del video en el canvas
-      this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-      
-      // Marcar la textura para actualizarla
-      this.texture.needsUpdate = true;
-      console.log("Textura actualizada con los datos del canvas.");
+      try {
+        // Dibujar el frame del video en el canvas
+        this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+        console.log("Dibujando el video en el canvas.");
+
+        // Marcar la textura para actualizarla
+        this.texture.needsUpdate = true;
+      } catch (e) {
+        console.error("Error al dibujar el video en el canvas:", e);
+      }
     } else {
       console.warn("El video aún no tiene suficientes datos para ser dibujado.");
     }
