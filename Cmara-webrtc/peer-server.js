@@ -1,32 +1,80 @@
-// Importar PeerServer desde la biblioteca PeerJS
-const { PeerServer } = require('peer');
+AFRAME.registerComponent('peer-connection', {
+  schema: {
+    role: { type: 'string', default: 'transmitter' }, // Puede ser 'transmitter' o 'receiver'
+    peerId: { type: 'string', default: '' } // Solo se necesita para el receptor
+  },
 
-// Crear un servidor PeerJS usando HTTPS (con el puerto y certificados SSL)
-const fs = require('fs');
-const https = require('https');
+  init: function () {
+    this.isTransmitter = this.data.role === 'transmitter';
+    this.peer = new Peer(null, {
+      host: 'localhost', // Cambia esto por la IP del servidor PeerJS
+      port: 9000,
+      path: '/',
+      secure: false
+    });
 
-// Leer los certificados SSL (esto es para https)
-const privateKey = fs.readFileSync('key.pem', 'utf8');
-const certificate = fs.readFileSync('cert.pem', 'utf8');
+    if (this.isTransmitter) {
+      this.initTransmitter();
+    } else {
+      this.initReceiver();
+    }
+  },
 
-const credentials = {
-  key: privateKey,
-  cert: certificate
-};
+  initTransmitter: function () {
+    this.peer.on('open', (id) => {
+      console.log("Transmisor: Mi ID de peer es:", id);
+      alert(`Transmisor listo. Comparte este ID con los receptores: ${id}`);
+    });
 
-// Crear un servidor HTTPS utilizando Node.js
-const httpsServer = https.createServer(credentials);
+    this.peer.on('call', (call) => {
+      console.log("Transmisor: Llamada entrante recibida.");
+      const videoComponent = document.querySelector('[camera-component]');
+      if (videoComponent) {
+        const stream = videoComponent.components['camera-component'].videoElement.srcObject;
+        call.answer(stream);
+      } else {
+        console.error("No se encontró el componente de cámara.");
+      }
+    });
+  },
 
-// Configurar PeerServer en el servidor HTTPS
-const peerServer = PeerServer({
-  port: 9000,
-  path: '/peerjs',
-  secure: true,
-  proxied: true,
-  server: httpsServer
-});
+  initReceiver: function () {
+    const peerID = this.data.peerId;
 
-// Iniciar el servidor HTTPS junto con PeerJS
-httpsServer.listen(9000, () => {
-  console.log('Servidor PeerJS corriendo en https://localhost:9000');
+    if (!peerID) {
+      console.error('El ID del Peer proporcionado es inválido o está vacío.');
+      return;
+    }
+
+    console.log(`Receptor: Intentando conectar al Peer ID del transmisor: ${peerID}`);
+
+    this.peer.on('open', () => {
+      console.log('Receptor: Conexión abierta con PeerJS, intentando conectar con el transmisor.');
+
+      const call = this.peer.call(peerID, null);
+
+      if (!call) {
+        console.error("Error al realizar la llamada: el objeto 'call' no fue creado. Verifica el Peer ID del transmisor.");
+        return;
+      }
+
+      call.on('stream', (remoteStream) => {
+        console.log('Receptor: Recibido el stream desde el transmisor.');
+        const videoElement = document.createElement('video');
+        videoElement.srcObject = remoteStream;
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+
+        document.body.appendChild(videoElement); // Agregar video al documento
+      });
+
+      call.on('error', (err) => {
+        console.error('Error en la llamada de PeerJS:', err);
+      });
+    });
+
+    this.peer.on('error', (err) => {
+      console.error('Error en PeerJS:', err);
+    });
+  }
 });
