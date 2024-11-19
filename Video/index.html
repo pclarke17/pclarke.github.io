@@ -4,10 +4,27 @@
   <meta charset="UTF-8">
   <title>Video en Canvas con A-Frame (Iniciar con Botón)</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="video-texture-component.js" ></script> <!-- Carga el componente personalizado al final -->
+  <script src="video-texture-component.js"></script> <!-- Carga el componente personalizado -->
 
+  <style>
+    #startButton {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
 <body>
- 
+  <!-- Botón para iniciar el video -->
+  <button id="startButton">Iniciar Video</button>
+
   <!-- Escena de A-Frame -->
   <a-scene>
     <a-camera position="0 1.6 5"></a-camera>
@@ -15,5 +32,24 @@
     <a-light type="directional" position="-1 2 3" intensity="1.5"></a-light>
     <a-sky color="#ECECEC"></a-sky>
   </a-scene>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const startButton = document.getElementById('startButton');
+      startButton.addEventListener('click', () => {
+        // Iniciar la reproducción del video cuando el usuario haga clic
+        const videoElements = document.querySelectorAll('[video-canvas-texture]');
+        videoElements.forEach(el => {
+          const component = el.components['video-canvas-texture'];
+          if (component && component.startVideo) {
+            component.startVideo();
+          }
+        });
+
+        // Ocultar el botón después de hacer clic
+        startButton.style.display = 'none';
+      });
+    });
+  </script>
 </body>
 </html>

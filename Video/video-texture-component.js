@@ -8,16 +8,15 @@ AFRAME.registerComponent('video-canvas-texture', {
     this.videoElement = document.createElement('video');
     this.videoElement.src = "video.mp4";  // Establecer la ruta del video directamente aquí
     this.videoElement.crossOrigin = 'anonymous';  // Permitir CORS para videos alojados en otras fuentes
-    this.videoElement.autoplay = true;  // Intentar reproducir automáticamente
     this.videoElement.playsInline = true;  // Reproducción en línea
-    this.videoElement.muted = false;  
+    this.videoElement.muted = false;  // Se requiere interacción para reproducir si está en sonido
     this.videoElement.loop = true;  // Repetir el video continuamente
 
     console.log("Elemento de video creado dinámicamente:", this.videoElement);
 
     // Crear un canvas para dibujar el contenido del video
     this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext('2d', { willReadFrequently: true }); //willReadFrequently: optimización de operación repetitiva de lectura del canvas
+    this.context = this.canvas.getContext('2d', { willReadFrequently: true });
     console.log("Canvas creado con contexto 2D:", this.canvas, this.context);
 
     // Crear una textura a partir del canvas y asignarla al material del objeto 3D
@@ -31,20 +30,16 @@ AFRAME.registerComponent('video-canvas-texture', {
       return;
     }
 
-    // Esperar a que el video esté listo para reproducir
-    this.videoElement.addEventListener('loadeddata', () => {
-      if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
-        console.log("Datos del video cargados. Configurando el canvas.");
+    // Añadir la función para iniciar la reproducción del video después de la interacción del usuario
+    this.startVideo = () => {
+      this.videoElement.play().then(() => {
+        console.log("Video reproduciéndose automáticamente.");
         this.canvas.width = this.videoElement.videoWidth;
         this.canvas.height = this.videoElement.videoHeight;
-
-        this.videoElement.play().then(() => {
-          console.log("Video reproduciéndose automáticamente.");
-        }).catch((error) => {
-          console.error("Error al intentar reproducir el video automáticamente:", error);
-        });
-      }
-    });
+      }).catch((error) => {
+        console.error("Error al intentar reproducir el video automáticamente:", error);
+      });
+    };
 
     // Agregar un listener para manejar errores en la carga del video
     this.videoElement.addEventListener('error', (e) => {
@@ -64,20 +59,20 @@ AFRAME.registerComponent('video-canvas-texture', {
       const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
       const data = imageData.data;
 
-      // Procesar cada pixel:  modificar los valores RGBA
+      // Procesar cada pixel: mantener los valores sin modificar
       for (let i = 0; i < data.length; i += 4) {
-        // Accede a cada canal (R, G, B, A)
         const r = data[i];     // Rojo
         const g = data[i + 1]; // Verde
         const b = data[i + 2]; // Azul
         const a = data[i + 3]; // Alfa
 
-         // No hacemos ningún cambio para mantener los colores originales
-         data[i] = r;     // Rojo (sin cambios)
-         data[i + 1] = g; // Verde (sin cambios)
-         data[i + 2] = b; // Azul (sin cambios)
-         data[i + 3] = a; // Alfa (sin cambios)
-       }
+        // Mantener los valores originales
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+        data[i + 3] = a;
+      }
+
       // Devolver la imagen procesada al canvas
       this.context.putImageData(imageData, 0, 0);
 
