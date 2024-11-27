@@ -1,123 +1,41 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-    <title>A-Frame con WebRTC SimplePeer</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.1/dist/peerjs.min.js"></script>
     <script src="Camara-component.js"></script>
-  </head>
-  <style>
-    #roleSelection {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1000; /* Muy alto para que esté siempre encima */
-      background: rgba(0, 0, 0, 0.8); /* Fondo oscuro semitransparente */
-      color: white;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    #interface {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 1000; /* Alto para que quede encima de A-Frame */
-      background: rgba(255, 255, 255, 0.8); /* Fondo semitransparente para visibilidad */
-      padding: 10px;
-      border-radius: 5px;
-      display: none; /* Oculto hasta que se elige un rol */
-    }
-
-    button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-  </style>
-  <body>
-    <!-- Div para selección del rol -->
-    <div id="roleSelection">
-      <h3>Elige tu rol:</h3>
-      <button id="peer1Button">Soy el Iniciador (Peer 1)</button>
-      <button id="peer2Button">Soy el Receptor (Peer 2)</button>
-    </div>
-
-    <!-- Div para interfaz de señalización -->
-    <div id="interface">
-      <textarea id="outgoingSignal" placeholder="Signal para copiar" rows="3" cols="40"></textarea><br><br>
-      <textarea id="incomingSignal" placeholder="Pega aquí la señal recibida" rows="3" cols="40"></textarea><br><br>
-      <button id="connectButton">Conectar</button>
-    </div>
-
-    <!-- A-Frame Scene -->
-    <a-scene>
-      <a-box position="0 1 -3" width="4" height="2.25" depth="0.1" camera-canvas-texture></a-box>
+</head>
+<body>
+    <!-- La escena de A-Frame -->
+    <a-scene id="aframe-scene" style="display: none;">
+        <a-box id="video-box" position="0 1.5 -3" rotation="0 45 0" width="4" height="2"></a-box>
     </a-scene>
 
     <script>
-      let peer;
+      // Preguntar al usuario el rol: transmisor o receptor
+      window.onload = function () {
+          const role = prompt("¿Quieres ser el transmisor (t) o el receptor (r)? Introduce 't' para transmisor o 'r' para receptor.");
 
-      // Obtener elementos HTML
-      const connectButton = document.getElementById('connectButton');
-      const outgoingSignal = document.getElementById('outgoingSignal');
-      const incomingSignal = document.getElementById('incomingSignal');
-      const roleSelection = document.getElementById('roleSelection');
-      const interfaceDiv = document.getElementById('interface');
-      const peer1Button = document.getElementById('peer1Button');
-      const peer2Button = document.getElementById('peer2Button');
+          // Seleccionar el elemento de la escena
+          const scene = document.getElementById('aframe-scene');
 
-      // Configuración para Peer 1
-      peer1Button.addEventListener('click', () => {
-        initializePeer(true);
-      });
+          // Mostrar la escena solo cuando se seleccione un rol válido
+          if (role === 't' || role === 'r') {
+              // Mostrar la escena de A-Frame
+              scene.style.display = "block";
 
-      // Configuración para Peer 2
-      peer2Button.addEventListener('click', () => {
-        initializePeer(false);
-      });
-
-      function initializePeer(isInitiator) {
-        // Ocultar la selección de rol y mostrar la interfaz de señales
-        roleSelection.style.display = 'none';
-        interfaceDiv.style.display = 'block';
-
-        // Crear el peer
-        peer = new SimplePeer({ initiator: isInitiator, trickle: false });
-
-        peer.on('signal', (data) => {
-          // Mostrar el dato de señalización en el textarea para copiarlo
-          console.log('Generando señal:', data);
-          outgoingSignal.value = JSON.stringify(data);
-        });
-
-        connectButton.addEventListener('click', () => {
-          // Establecer la señalización del peer cuando se pegue la señal
-          const signal = incomingSignal.value.trim();
-          if (signal) {
-            try {
-              peer.signal(JSON.parse(signal));
-              console.log('Señal ingresada:', signal);
-            } catch (e) {
-              console.error('Error al parsear la señal ingresada:', e);
-            }
+              if (role === 't') {
+                  // Empezar como transmisor
+                  document.querySelector('a-box').setAttribute('camera-canvas-texture', 'role: transmitter');
+              } else if (role === 'r') {
+                  // Empezar como receptor
+                  document.querySelector('a-box').setAttribute('camera-canvas-texture', 'role: receiver');
+              }
           } else {
-            console.warn('No se ingresó ninguna señal para conectar');
+              alert("Opción inválida. Recarga la página e introduce 't' o 'r'.");
           }
-        });
-
-        peer.on('connect', () => {
-          console.log('Conexión establecida');
-        });
-
-        peer.on('error', (err) => {
-          console.error('Error en SimplePeer:', err);
-        });
-      }
+      };
     </script>
-  </body>
+</body>
 </html>

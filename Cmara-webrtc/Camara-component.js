@@ -1,125 +1,190 @@
 AFRAME.registerComponent('camera-canvas-texture', {
   schema: {
-    frameRate: { type: 'number', default: 30 }  // Frames por segundo
+    role: { type: 'string', default: '' } // Puede ser 'transmitter' o 'receiver'
   },
 
   init: function () {
     const el = this.el;
+    const role = this.data.role;
 
-    // Crear dinámicamente el elemento de video para la cámara
-    this.videoElement = document.createElement('video');
-    this.videoElement.autoplay = true;
-    this.videoElement.playsInline = true;  // Reproducción en línea (necesario para dispositivos móviles)
-    this.videoElement.muted = true;  // Silenciar el video para evitar problemas de reproducción automática
-    this.videoElement.loop = true;  // Repetir el video
+    // Crear un elemento de video para la transmisión o recepción
+    const videoElement = document.createElement('video');
+    videoElement.setAttribute('autoplay', 'true');
+    videoElement.setAttribute('playsinline', 'true');
+    videoElement.setAttribute('muted', 'true'); // Para permitir la reproducción automática
 
-    console.log("Elemento de video creado dinámicamente para la cámara:", this.videoElement);
+    // Crear un canvas y una textura para A-Frame
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = 640;
+    canvas.height = 360;
 
-    // Crear un canvas para dibujar el contenido del video
-    this.canvas = document.createElement('canvas');
-    this.context = this.canvas.getContext('2d', { willReadFrequently: true });
-    console.log("Canvas creado con contexto 2D:", this.canvas, this.context);
+    // Crear la textura de THREE.js a partir del canvas
+    const texture = new THREE.Texture(canvas);
+    el.getObject3D('mesh').material.map = texture;
 
-    // Crear una textura a partir del canvas y asignarla al material del objeto 3D
-    this.texture = new THREE.Texture(this.canvas);
-    const mesh = this.el.getObject3D('mesh');
-    if (mesh) {
-      mesh.material.map = this.texture;
-      console.log("Textura creada y asignada al material del objeto 3D.");
+    let peer = null;
+    let call = null;
+
+    if (role === 'transmitter') {
+      console.log("Iniciando como transmisor...");
+      startTransmitter();
+    } else if (role === 'receiver') {
+      console.log("Iniciando como receptor...");
+      startReceiver();
     } else {
-      console.error('No se encontró el mesh del elemento al cual aplicar la textura.');
+      console.error("Rol inválido. No se pudo iniciar el componente.");
       return;
     }
 
-    // Crear Peer con simple-peer
-    const isInitiator = location.hash === '#1';
-    this.peer = new SimplePeer({ initiator: isInitiator, trickle: false });
+    // Función para empezar como transmisor
+    function startTransmitter() {
+      console.log("Intentando iniciar PeerJS como transmisor...");
 
-    // Si es el iniciador, obtener acceso a la cámara y agregar el stream
-    if (isInitiator) {
-      navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false
-      })
-      .then((stream) => {
-        console.log("Stream obtenido para el iniciador");
-        this.videoElement.srcObject = stream;
+      peer = new Peer({
+        host: 'localhost',
+        port: 9000,
+        path: '/',
+        debug: 3,
+        config: {
+          'iceServers': [
+            { url: 'stun:stun.l.google.com:19302' },
+          ]
+        }
+      });
 
-        this.videoElement.addEventListener('loadeddata', () => {
-          if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
-            console.log("Stream de cámara listo. Configurando el canvas.");
-            this.canvas.width = this.videoElement.videoWidth;
-            this.canvas.height = this.videoElement.videoHeight;
+      peer.on('open', (id) => {
+        console.log('Transmisor listo. ID de peer:', id);
+        alert(`Transmisor listo. Comparte este ID con los receptores: ${id}`);
+      });
 
-            this.videoElement.play().then(() => {
-              console.log("Video de la cámara reproduciéndose automáticamente.");
-            }).catch((error) => {
-              console.error("Error al intentar reproducir el video:", error);
+      peer.on('error', (err) => {
+        console.error('Error en PeerJS (Transmisor):', err);
+      });
+
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+          console.log("Acceso a la cámara concedido.");
+          videoElement.srcObject = stream;
+
+          videoElement.onloadedmetadata = () => {
+            console.log("Metadatos del video cargados. Intentando reproducir el video...");
+            videoElement.play().then(() => {
+              console.log("Video de la cámara está reproduciéndose.");
+              updateCanvas();
+            }).catch(err => {
+              console.error("Error al intentar reproducir el video automáticamente:", err);
             });
+          };
+
+          // Manejar llamadas entrantes de receptores
+          peer.on('call', (incomingCall) => {
+            console.log('Llamada entrante recibida. Respondiendo con el stream de la cámara...');
+            incomingCall.answer(stream);
+          });
+
+        })
+        .catch((err) => {
+          console.error('Error al acceder a la cámara:', err);
+        });
+    }
+
+    // Función para conectarse como receptor
+    function startReceiver() {
+      console.log("Intentando iniciar PeerJS como receptor...");
+
+      peer = new Peer({
+        host: 'localhost',
+        port: 9000,
+        path: '/',
+        debug: 3,
+        config: {
+          'iceServers': [
+            { url: 'stun:stun.l.google.com:19302' },
+          ]
+        }
+      });
+
+      // Cuando el receptor esté listo
+      peer.on('open', (id) => {
+        console.log('Receptor listo. ID de peer:', id);
+
+        // Preguntar al usuario el ID del transmisor
+        const transmitterId = prompt("Ingrese el Peer ID del transmisor:");
+        if (!transmitterId) {
+          alert('No se ingresó un Peer ID válido.');
+          return;
+        }
+
+        console.log('Receptor intentando conectar al transmisor con ID:', transmitterId);
+
+        // Crear un MediaStream falso (trick) para permitir la llamada
+        let fakeStream = new MediaStream();
+
+        // Intentar la llamada al transmisor con el MediaStream falso
+        call = peer.call(transmitterId, fakeStream);
+
+        // Revisar si `call` se crea correctamente
+        if (!call) {
+          console.error('No se pudo crear el objeto de llamada. Verifica el Peer ID ingresado.');
+          return;
+        }
+
+        // Configurar los eventos de la llamada
+        call.on('stream', (remoteStream) => {
+          console.log('Recibiendo transmisión remota...');
+
+          // Verificar que el stream tenga pistas de video
+          if (remoteStream.getVideoTracks().length > 0) {
+            console.log('Stream remoto contiene pistas de video.');
+
+            // Configurar el elemento de video con el stream recibido
+            videoElement.srcObject = remoteStream;
+            videoElement.onloadedmetadata = () => {
+              console.log("Stream remoto está listo, intentando reproducir...");
+              videoElement.play().then(() => {
+                console.log("Video recibido está reproduciéndose.");
+                updateCanvas();
+              }).catch(err => {
+                console.error("Error al intentar reproducir el video remoto:", err);
+              });
+            };
+
+            // Escuchar por actualizaciones en el video cada vez que el video esté disponible
+            videoElement.addEventListener('playing', () => {
+              console.log("Video remoto en reproducción, actualizando canvas.");
+              updateCanvas();
+            });
+
+          } else {
+            console.error('El stream remoto no contiene pistas de video.');
           }
         });
 
-        // Agregar el stream al Peer
-        this.peer.addStream(stream);
-
-        // Mostrar la señal para copiarla manualmente
-        this.peer.on('signal', (data) => {
-          console.log('SIGNAL', JSON.stringify(data));
+        call.on('error', (err) => {
+          console.error('Receptor: Error en la llamada de PeerJS:', err);
         });
+      });
 
-      }).catch((error) => {
-        console.error('Error al acceder a la cámara:', error);
+      peer.on('disconnected', () => {
+        console.error("El receptor ha sido desconectado del servidor PeerJS.");
+      });
+
+      peer.on('error', (err) => {
+        console.error('Receptor: Error en PeerJS:', err);
+        if (err.type === 'peer-unavailable') {
+          alert('El Peer ID ingresado no está disponible. Asegúrate de que el transmisor esté en línea.');
+        }
       });
     }
 
-    // Manejar el stream recibido para el receptor
-    this.peer.on('stream', (remoteStream) => {
-      console.log('Recibiendo transmisión remota');
-      this.videoElement.srcObject = remoteStream;
-
-      this.videoElement.addEventListener('loadeddata', () => {
-        if (this.videoElement.readyState >= this.videoElement.HAVE_CURRENT_DATA) {
-          this.canvas.width = this.videoElement.videoWidth;
-          this.canvas.height = this.videoElement.videoHeight;
-
-          this.videoElement.play().then(() => {
-            console.log("Video remoto reproduciéndose automáticamente.");
-            this.startUpdatingCanvas();
-          }).catch((error) => {
-            console.error("Error al intentar reproducir el video remoto:", error);
-          });
-        }
-      });
-    });
-
-    // Manejar errores
-    this.peer.on('error', (err) => {
-      console.error('Error en SimplePeer:', err);
-    });
-
-    // Iniciar la actualización del canvas después de que el video se esté reproduciendo
-    this.videoElement.addEventListener('play', () => {
-      this.startUpdatingCanvas();
-    });
-  },
-
-  startUpdatingCanvas: function () {
-    const updateCanvas = () => {
-      if (!this.videoElement.paused && !this.videoElement.ended) {
-        console.log("Dibujando el video en el canvas...");
-        this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-
-        // Actualizar la textura
-        this.texture.needsUpdate = true;
-        requestAnimationFrame(updateCanvas);
-      } else {
-        console.warn("El video aún no tiene suficientes datos para ser dibujado.");
+    // Función para actualizar el canvas y la textura
+    function updateCanvas() {
+      if (!videoElement.paused && !videoElement.ended) {
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        texture.needsUpdate = true; // Asegurarse de que la textura se actualice
       }
-    };
-    requestAnimationFrame(updateCanvas);
-  },
-
-  tick: function () {
-    // No necesitamos usar `tick` ya que estamos usando requestAnimationFrame para actualizar el canvas.
+      requestAnimationFrame(updateCanvas);
+    }
   }
 });
