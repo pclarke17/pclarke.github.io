@@ -42,9 +42,10 @@ AFRAME.registerComponent('camera-canvas-texture', {
       console.log("Intentando iniciar PeerJS como transmisor...");
 
       peer = new Peer({
-        host: 'localhost',
-        port: 9000,
+        host: '0.peerjs.com',
+        port: 443,
         path: '/',
+        secure: true,
         debug: 3,
         config: {
           'iceServers': [
@@ -94,9 +95,10 @@ AFRAME.registerComponent('camera-canvas-texture', {
       console.log("Intentando iniciar PeerJS como receptor...");
 
       peer = new Peer({
-        host: 'localhost',
-        port: 9000,
+        host: '0.peerjs.com',
+        port: 443,
         path: '/',
+        secure: true,
         debug: 3,
         config: {
           'iceServers': [
